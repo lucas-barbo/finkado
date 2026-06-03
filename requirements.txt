@@ -1,0 +1,7 @@
+# Este projeto usa apenas bibliotecas nativas do Python:
+# - tkinter para a interface gráfica
+# - sqlite3 para persistência local
+#
+# Nenhuma dependência externa de execução precisa ser instalada via pip.
+# O Jenkinsfile instala o PyInstaller separadamente como ferramenta de build.
+

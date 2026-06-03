@@ -26,6 +26,8 @@ htmlcov/
 # Build artifacts
 build/
 dist/
+build_output/
+*.spec
 *.egg-info/
 
 # IDE/editor files
@@ -37,4 +39,3 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
-

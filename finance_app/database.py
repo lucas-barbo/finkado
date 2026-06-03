@@ -2,12 +2,33 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
+import sys
 from pathlib import Path
 
 
 DATABASE_NAME = "finance_app.db"
-DATABASE_PATH = Path(__file__).resolve().parent / DATABASE_NAME
+APP_NAME = "Finkado"
+
+
+def _get_user_data_dir() -> Path:
+    """Retorna uma pasta gravável para dados quando o app está empacotado."""
+    if os.name == "nt":
+        return Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / APP_NAME
+    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / APP_NAME
+
+
+def _get_default_database_path() -> Path:
+    """Usa pasta local no desenvolvimento e AppData quando executável."""
+    if getattr(sys, "frozen", False):
+        return _get_user_data_dir() / DATABASE_NAME
+    return Path(__file__).resolve().parent / DATABASE_NAME
+
+
+DATABASE_PATH = _get_default_database_path()
 
 
 def get_connection(db_path: Path | str = DATABASE_PATH) -> sqlite3.Connection:
@@ -44,4 +65,3 @@ def initialize_database(db_path: Path | str = DATABASE_PATH) -> Path:
         raise RuntimeError(f"Não foi possível criar as tabelas: {error}") from error
 
     return database_path
-
