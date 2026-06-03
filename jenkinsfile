@@ -1,0 +1,63 @@
+pipeline {
+    agent { label 'windows' } // Garante que a build rode no Agent Windows
+
+    environment {
+        // Caminho padrão do instalador do Inno Setup 6 no Windows
+        INNO_SETUP_COMPILER = 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Prepare Environment & Dependencies') {
+            steps {
+                powershell '''
+                    # Cria o ambiente virtual e atualiza o pip
+                    python -m venv venv
+                    .\\venv\\Scripts\\Activate.ps1
+                    python -m pip install --upgrade pip
+                    
+                    # Instala as dependências do finkado + ferramentas de build
+                    pip install -r requirements.txt
+                    pip install pyinstaller
+                '''
+            }
+        }
+
+        stage('PyInstaller Build') {
+            steps {
+                powershell '''
+                    .\\venv\\Scripts\\Activate.ps1
+                    
+                    # Gera o executável bruto na pasta dist/finkado
+                    # --windowed impede que a janela preta do prompt apareça atrás da GUI
+                    pyinstaller --noconfirm --onedir --windowed --name "finkado" main.py
+                '''
+            }
+        }
+
+        stage('Inno Setup Packaging') {
+            steps {
+                powershell '''
+                    # Executa o compilador do Inno Setup usando o nosso script configurado
+                    & "${env:INNO_SETUP_COMPILER}" .\\installer\\installer_config.iss
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            // Disponibiliza o Finkado_Setup.exe diretamente na página da Build do Jenkins
+            archiveArtifacts artifacts: 'build_output/Finkado_Setup.exe', followSymlinks: false
+            echo 'Sucesso! O instalador do Finkado foi gerado e arquivado.'
+        }
+        failure {
+            echo 'Falha na pipeline. Verifique o log de console acima para identificar o erro.'
+        }
+    }
+}
