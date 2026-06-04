@@ -34,6 +34,7 @@ O sistema permite cadastrar receitas e despesas, visualizar um dashboard finance
 │   └── views/
 │       └── main_window.py
 │
+├── finkado.py
 ├── installer/
 │   └── setup.iss
 │
@@ -45,6 +46,7 @@ O sistema permite cadastrar receitas e despesas, visualizar um dashboard finance
 
 ### Organização das Camadas
 
+- **`finkado.py`**: launcher usado pelo PyInstaller para iniciar a aplicação mantendo `finance_app` como pacote Python.
 - **`finance_app/main.py`**: ponto de entrada da aplicação. Inicializa o banco de dados, cria o repositório e abre a janela principal.
 - **`finance_app/database.py`**: centraliza a conexão com o SQLite e a criação automática das tabelas necessárias.
 - **`finance_app/models/`**: contém as entidades do domínio, como a classe `Transaction`, que representa uma transação financeira.
@@ -119,11 +121,10 @@ A partir da raiz do projeto, execute:
 python -m finance_app.main
 ```
 
-Também é possível entrar na pasta da aplicação e rodar diretamente o arquivo principal:
+Também é possível executar o mesmo launcher usado no build:
 
 ```bash
-cd finance_app
-python main.py
+python finkado.py
 ```
 
 ## Funcionalidades Principais
@@ -165,7 +166,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip install --upgrade pyinstaller
-.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --onedir --windowed --name Finkado finance_app\main.py
+.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --onedir --windowed --name Finkado finkado.py
 & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss
 ```
 
@@ -279,7 +280,7 @@ O `Jenkinsfile` possui os seguintes estágios:
 - **Checkout**: baixa o código-fonte do repositório.
 - **Validate Tools**: localiza o Python 3.10+, valida `git` e confirma se `ISCC.exe` existe.
 - **Prepare Python Environment**: cria a `.venv` usando o Python encontrado, atualiza o `pip`, instala `requirements.txt` e instala o `pyinstaller`.
-- **Validate Python Code**: executa `python -m compileall finance_app`.
+- **Validate Python Code**: executa `python -m compileall finance_app finkado.py`.
 - **Build Executable**: gera `dist/Finkado/Finkado.exe` com PyInstaller.
 - **Package Installer**: executa `installer/setup.iss` com o compilador do Inno Setup.
 - **Archive Installer**: publica `build_output/*.exe` como artefato baixável no Jenkins.
@@ -327,7 +328,7 @@ FinkadoSetup-<versao>.exe
 | `ISCC.exe não encontrado` | Inno Setup instalado em outro caminho | Atualize `INNO_COMPILER` no `Jenkinsfile` |
 | `cleanWs` não existe | Plugin Workspace Cleanup ausente | Instale o plugin **Workspace Cleanup** ou remova o bloco `cleanWs` do `post` |
 | PyInstaller não instala | Agente sem internet ou com proxy | Configure proxy no Jenkins/agente ou use um cache interno de pacotes |
-| `Executável não gerado` | Entrada Python ou nome do app divergente | Confirme `PYTHON_ENTRY = 'finance_app\\main.py'` e `APP_NAME = 'Finkado'` |
+| `Executável não gerado` | Entrada Python ou nome do app divergente | Confirme `PYTHON_ENTRY = 'finkado.py'` e `APP_NAME = 'Finkado'` |
 | Inno Setup falha por arquivos ausentes | A pasta `dist/Finkado` não foi criada | Verifique o estágio **Build Executable** antes do estágio **Package Installer** |
 
 ## Referências

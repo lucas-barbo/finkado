@@ -5,12 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-try:
-    from ..database import get_connection
-    from ..models.transaction import Transaction
-except ImportError:
-    from database import get_connection
-    from models.transaction import Transaction
+from finance_app.database import get_connection
+from finance_app.models.transaction import Transaction
 
 
 class TransactionRepository:
@@ -91,4 +87,3 @@ class TransactionRepository:
                 }
         except sqlite3.Error as error:
             raise RuntimeError(f"Erro ao calcular resumo financeiro: {error}") from error
-

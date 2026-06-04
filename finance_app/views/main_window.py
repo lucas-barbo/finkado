@@ -5,12 +5,8 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-try:
-    from ..models.transaction import Transaction, VALID_TRANSACTION_TYPES
-    from ..repositories.transaction_repo import TransactionRepository
-except ImportError:
-    from models.transaction import Transaction, VALID_TRANSACTION_TYPES
-    from repositories.transaction_repo import TransactionRepository
+from finance_app.models.transaction import Transaction, VALID_TRANSACTION_TYPES
+from finance_app.repositories.transaction_repo import TransactionRepository
 
 
 class MainWindow:

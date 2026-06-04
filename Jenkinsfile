@@ -4,7 +4,7 @@ pipeline {
     environment {
         APP_NAME = 'Finkado'
         APP_VERSION = '1.0.0'
-        PYTHON_ENTRY = 'finance_app\\main.py'
+        PYTHON_ENTRY = 'finkado.py'
         VENV_DIR = '.venv'
         PYTHON_EXE_FILE = '.jenkins-python.txt'
         PYINSTALLER_DIST_DIR = 'dist'
@@ -75,7 +75,7 @@ pipeline {
                     $ErrorActionPreference = "Stop"
 
                     $pythonExe = Join-Path $env:VENV_DIR "Scripts\\python.exe"
-                    & $pythonExe -m compileall finance_app
+                    & $pythonExe -m compileall finance_app finkado.py
                 '''
             }
         }

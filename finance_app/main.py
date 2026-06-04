@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+import sys
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox
 
-try:
-    from .database import initialize_database
-    from .repositories.transaction_repo import TransactionRepository
-    from .views.main_window import MainWindow
-except ImportError:
-    from database import initialize_database
-    from repositories.transaction_repo import TransactionRepository
-    from views.main_window import MainWindow
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from finance_app.database import initialize_database
+from finance_app.repositories.transaction_repo import TransactionRepository
+from finance_app.views.main_window import MainWindow
 
 
 def main() -> None:
@@ -35,4 +35,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
