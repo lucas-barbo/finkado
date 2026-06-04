@@ -72,7 +72,7 @@ Para gerar o instalador Windows localmente ou via Jenkins:
 
 - **Windows** no ambiente de build
 - **Git**
-- **Python 3.10+** disponível no `PATH`
+- **Python 3.10+** disponível para o serviço Jenkins via `PATH`, Python Launcher `py` ou variável `PYTHON_EXE`
 - **Inno Setup 6**
 - Acesso à internet para instalar o **PyInstaller** durante o build
 
@@ -161,7 +161,7 @@ O build local usa o mesmo fluxo automatizado no Jenkins: PyInstaller primeiro, I
 Execute os comandos abaixo no PowerShell, a partir da raiz do projeto:
 
 ```powershell
-python -m venv .venv
+py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip install --upgrade pyinstaller
@@ -192,20 +192,36 @@ GitHub
   → arquivar FinkadoSetup-1.0.0.exe
 ```
 
-### 1. Preparar o agente Jenkins Windows
+### 1. Preparar o Jenkins no Windows
 
-O agente Jenkins que executará a pipeline deve ter o label `windows`, ou você deve ajustar o bloco abaixo no `Jenkinsfile`:
+Este projeto considera que o Jenkins será executado diretamente no Windows, usando o próprio nó/controller do Jenkins. Por isso, o `Jenkinsfile` usa:
 
 ```groovy
-agent { label 'windows' }
+agent any
 ```
 
-Instale e valide as ferramentas no agente:
+Instale e valide as ferramentas no mesmo Windows onde o serviço do Jenkins está rodando:
 
 ```powershell
-python --version
+py -3 --version
 git --version
 & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /?
+```
+
+> Importante: o serviço do Jenkins pode não enxergar o mesmo `PATH` do seu usuário logado. Se `python` funciona no seu terminal, mas falha no Jenkins, instale o Python para todos os usuários, marque **Add python.exe to PATH** e reinicie o serviço do Jenkins.
+
+O pipeline tenta localizar o Python nesta ordem:
+
+1. Variável de ambiente `PYTHON_EXE`, se configurada no Jenkins.
+2. Comando `python`, se estiver no `PATH`.
+3. Python Launcher `py -3`, se estiver disponível.
+4. Caminhos comuns como `C:\Python312\python.exe` e `C:\Program Files\Python312\python.exe`.
+
+Se necessário, configure manualmente em **Manage Jenkins → System → Global properties → Environment variables**:
+
+```text
+Name: PYTHON_EXE
+Value: C:\Users\SEU_USUARIO\AppData\Local\Programs\Python\Python312\python.exe
 ```
 
 Se o Inno Setup estiver instalado em outro local, altere esta variável no `Jenkinsfile`:
@@ -233,10 +249,12 @@ Se ainda não houver repositório remoto:
 git init
 git add .
 git commit -m "feat: gestor financeiro com pipeline jenkins"
-git branch -M main
+git branch -M master
 git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-git push -u origin main
+git push -u origin master
 ```
+
+Se seu repositório usar `main`, troque `master` por `main` nos comandos acima e no job do Jenkins.
 
 ### 4. Criar o job no Jenkins
 
@@ -249,7 +267,7 @@ git push -u origin main
    - **SCM**: `Git`
    - **Repository URL**: `https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git`
    - **Credentials**: informe uma credencial se o repositório for privado
-   - **Branch Specifier**: `*/main`
+   - **Branch Specifier**: `*/master` ou `*/main`, conforme o branch do seu repositório
    - **Script Path**: `Jenkinsfile`
 6. Clique em **Save**.
 7. Clique em **Build Now**.
@@ -259,8 +277,8 @@ git push -u origin main
 O `Jenkinsfile` possui os seguintes estágios:
 
 - **Checkout**: baixa o código-fonte do repositório.
-- **Validate Tools**: confirma se `python`, `git` e `ISCC.exe` estão disponíveis no agente.
-- **Prepare Python Environment**: cria a `.venv`, atualiza o `pip`, instala `requirements.txt` e instala o `pyinstaller`.
+- **Validate Tools**: localiza o Python 3.10+, valida `git` e confirma se `ISCC.exe` existe.
+- **Prepare Python Environment**: cria a `.venv` usando o Python encontrado, atualiza o `pip`, instala `requirements.txt` e instala o `pyinstaller`.
 - **Validate Python Code**: executa `python -m compileall finance_app`.
 - **Build Executable**: gera `dist/Finkado/Finkado.exe` com PyInstaller.
 - **Package Installer**: executa `installer/setup.iss` com o compilador do Inno Setup.
@@ -304,7 +322,8 @@ FinkadoSetup-<versao>.exe
 
 | Sintoma | Causa provável | Solução |
 | --- | --- | --- |
-| `python` não é reconhecido | Python não está no `PATH` do agente Jenkins | Instale o Python e marque a opção de adicionar ao `PATH`, ou ajuste o ambiente do serviço Jenkins |
+| `python` não é reconhecido | Python não está no `PATH` do serviço Jenkins | Instale o Python para todos os usuários, marque **Add python.exe to PATH**, reinicie o serviço Jenkins ou configure `PYTHON_EXE` |
+| `py -3` funciona no terminal, mas não no Jenkins | Jenkins está rodando como serviço com outro usuário | Instale Python em modo all-users ou configure `PYTHON_EXE` com caminho absoluto |
 | `ISCC.exe não encontrado` | Inno Setup instalado em outro caminho | Atualize `INNO_COMPILER` no `Jenkinsfile` |
 | `cleanWs` não existe | Plugin Workspace Cleanup ausente | Instale o plugin **Workspace Cleanup** ou remova o bloco `cleanWs` do `post` |
 | PyInstaller não instala | Agente sem internet ou com proxy | Configure proxy no Jenkins/agente ou use um cache interno de pacotes |
@@ -317,4 +336,3 @@ FinkadoSetup-<versao>.exe
 - [Jenkins Pipeline Syntax](https://www.jenkins.io/doc/book/pipeline/syntax/)
 - [PyInstaller Usage](https://pyinstaller.org/en/stable/usage.html)
 - [Inno Setup](https://jrsoftware.org/isinfo.php)
-

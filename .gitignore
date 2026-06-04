@@ -17,6 +17,7 @@ ENV/
 # Local environment/config files
 .env
 .env.*
+.jenkins-python.txt
 
 # Test and coverage artifacts
 .pytest_cache/
