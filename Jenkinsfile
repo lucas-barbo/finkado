@@ -11,7 +11,7 @@ pipeline {
         PYINSTALLER_BUILD_DIR = 'build'
         ISS_SCRIPT = 'installer\\setup.iss'
         INSTALLER_OUTPUT_DIR = 'build_output'
-        PYTHON_EXE = 'C:\\Users\\Lucas Barbosa\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
+        PYTHON_EXE = 'C:\\Usuários\\Lucas Barbosa\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
         INNO_COMPILER = 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe'
     }
 
