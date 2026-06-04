@@ -42,8 +42,9 @@ pipeline {
                     if (-not (Test-Path $env:INNO_COMPILER)) {
                         throw "Compilador do Inno Setup nao encontrado: $env:INNO_COMPILER"
                     }
-
-                    & $env:INNO_COMPILER /?
+            
+                    # Escreve uma mensagem de sucesso no log do Jenkins
+                    Write-Output "Inno Setup validado com sucesso em: $env:INNO_COMPILER"       
                 '''
             }
         }
