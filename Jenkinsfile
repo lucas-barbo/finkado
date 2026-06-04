@@ -30,90 +30,12 @@ pipeline {
         stage('Validate Tools') {
             steps {
                 powershell '''
-                    $ErrorActionPreference = "Stop"
-
-                    function Resolve-PythonExecutable {
-                        $candidates = New-Object System.Collections.Generic.List[string]
-
-                        if ($env:PYTHON_EXE) {
-                            $candidates.Add($env:PYTHON_EXE)
-                        }
-
-                        $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
-                        if ($pythonCommand) {
-                            $candidates.Add($pythonCommand.Source)
-                        }
-
-                        $pyLauncher = Get-Command py -ErrorAction SilentlyContinue
-                        if ($pyLauncher) {
-                            try {
-                                $launcherPython = (& $pyLauncher.Source -3 -c "import sys; print(sys.executable)").Trim()
-                                if ($launcherPython) {
-                                    $candidates.Add($launcherPython)
-                                }
-                            } catch {
-                                Write-Host "Python Launcher encontrado, mas não conseguiu localizar Python 3."
-                            }
-                        }
-
-                        @(
-                            "$env:ProgramFiles\\Python312\\python.exe",
-                            "$env:ProgramFiles\\Python311\\python.exe",
-                            "$env:ProgramFiles\\Python310\\python.exe",
-                            "${env:ProgramFiles(x86)}\\Python312\\python.exe",
-                            "${env:ProgramFiles(x86)}\\Python311\\python.exe",
-                            "${env:ProgramFiles(x86)}\\Python310\\python.exe",
-                            "C:\\Python312\\python.exe",
-                            "C:\\Python311\\python.exe",
-                            "C:\\Python310\\python.exe"
-                        ) | ForEach-Object {
-                            if ($_ -and (Test-Path $_)) {
-                                $candidates.Add($_)
-                            }
-                        }
-
-                        foreach ($candidate in ($candidates | Select-Object -Unique)) {
-                            if ([string]::IsNullOrWhiteSpace($candidate)) {
-                                continue
-                            }
-
-                            $candidate = $candidate.Trim().Trim('"')
-
-                            try {
-                                & $candidate -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-                                if ($LASTEXITCODE -eq 0) {
-                                    return $candidate
-                                }
-                            } catch {
-                                Write-Host "Candidato Python inválido: $candidate"
-                            }
-                        }
-
-                        $message = @(
-                            "Python 3.10+ não foi encontrado pelo Jenkins.",
-                            "",
-                            "Correções recomendadas no Windows:",
-                            "1. Instale o Python para todos os usuários.",
-                            "2. Marque a opção 'Add python.exe to PATH' durante a instalação.",
-                            "3. Reinicie o serviço do Jenkins após alterar o PATH.",
-                            "4. Alternativa: configure uma variável de ambiente do Jenkins chamada PYTHON_EXE apontando para o executável, por exemplo:",
-                            "   C:\\Users\\SEU_USUARIO\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
-                        ) -join [Environment]::NewLine
-
-                        throw $message
-                    }
-
-                    $resolvedPython = Resolve-PythonExecutable
-                    Set-Content -Path $env:PYTHON_EXE_FILE -Value $resolvedPython -Encoding ASCII
-
-                    & $resolvedPython --version
+                    # Testa os comandos globais diretamente no PATH do sistema
+                    python --version
                     git --version
-
-                    if (-not (Test-Path $env:INNO_COMPILER)) {
-                        throw "ISCC.exe não encontrado em: $env:INNO_COMPILER"
-                    }
-
-                    & $env:INNO_COMPILER /?
+                    
+                    # Valida o compilador do Inno Setup usando a flag de ajuda oficial (evita fechar com erro)
+                    & "${env:INNO_SETUP_COMPILER}" /?
                 '''
             }
         }
