@@ -11,7 +11,6 @@ pipeline {
         PYINSTALLER_BUILD_DIR = 'build'
         ISS_SCRIPT = 'installer\\setup.iss'
         INSTALLER_OUTPUT_DIR = 'build_output'
-        PYTHON_EXE = 'C:\\Usuários\\Lucas Barbosa\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
         INNO_COMPILER = 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe'
     }
 
@@ -30,12 +29,21 @@ pipeline {
         stage('Validate Tools') {
             steps {
                 powershell '''
-                    # Testa os comandos globais diretamente no PATH do sistema
-                    python --version
+                    $ErrorActionPreference = "Stop"
+
+                    # Testa os comandos globais diretamente no PATH do sistema.
+                    $pythonCommand = Get-Command python -ErrorAction Stop
+                    & $pythonCommand.Source --version
                     git --version
-                    
-                    # Valida o compilador do Inno Setup usando a flag de ajuda oficial (evita fechar com erro)
-                    & "${env:INNO_SETUP_COMPILER}" /?
+
+                    Set-Content -Path $env:PYTHON_EXE_FILE -Value $pythonCommand.Source -Encoding ASCII
+
+                    # Valida o compilador do Inno Setup configurado no Jenkinsfile.
+                    if (-not (Test-Path $env:INNO_COMPILER)) {
+                        throw "Compilador do Inno Setup nao encontrado: $env:INNO_COMPILER"
+                    }
+
+                    & $env:INNO_COMPILER /?
                 '''
             }
         }
@@ -95,7 +103,7 @@ pipeline {
 
                     $appExe = Join-Path $env:PYINSTALLER_DIST_DIR "$($env:APP_NAME)\\$($env:APP_NAME).exe"
                     if (-not (Test-Path $appExe)) {
-                        throw "Executável não gerado: $appExe"
+                        throw "Executavel nao gerado: $appExe"
                     }
                 '''
             }
@@ -125,7 +133,7 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline concluída com sucesso. Instalador disponível nos artefatos do build.'
+            echo 'Pipeline concluida com sucesso. Instalador disponivel nos artefatos do build.'
         }
         failure {
             echo 'Pipeline falhou. Verifique o log de console do Jenkins.'
@@ -139,7 +147,8 @@ pipeline {
                     [pattern: 'build/**', type: 'INCLUDE'],
                     [pattern: 'dist/**', type: 'INCLUDE'],
                     [pattern: 'build_output/**', type: 'INCLUDE'],
-                    [pattern: '*.spec', type: 'INCLUDE']
+                    [pattern: '*.spec', type: 'INCLUDE'],
+                    [pattern: '.jenkins-python.txt', type: 'INCLUDE']
                 ]
             )
         }
